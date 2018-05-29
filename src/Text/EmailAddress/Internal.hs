@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Text.EmailAddress.Internal
     ( EmailAddress(EmailAddress, unEmailAddress)
@@ -21,6 +22,7 @@ module Text.EmailAddress.Internal
     , toText
     ) where
 
+import Control.Lens ((&), (.~), (?~))
 import Control.Monad ((<=<))
 import Data.Aeson (FromJSON(..), ToJSON(..), Value(..), withText)
 import Data.Aeson.Types (Parser)
@@ -31,6 +33,9 @@ import Data.Monoid ((<>))
 import Data.Profunctor (lmap)
 import Data.Profunctor.Product.Default (Default(def))
 import Data.Proxy (Proxy(Proxy))
+import Data.Swagger
+    ( NamedSchema (NamedSchema), SwaggerType (SwaggerString), ToSchema
+    , declareNamedSchema, description, example, format, type_)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8With, encodeUtf8)
 import Data.Text.Encoding.Error (lenientDecode)
@@ -171,6 +176,13 @@ instance ToJSON EmailAddress where
 -- "foo@gmail.com"
 instance ToHttpApiData EmailAddress where
       toUrlPiece = toText
+
+instance ToSchema EmailAddress where
+    declareNamedSchema _ = return $ NamedSchema (Just "email") $ mempty
+        & type_ .~ SwaggerString
+        & description ?~ "email address"
+        & format ?~ "email"
+        & example ?~ "user@example.com"
 
 -- | Wrapper around 'EmailValidate.validate'.
 --
